@@ -1,0 +1,62 @@
+ /* Brian Huntley
+ * CSC 411 - Universal Machine
+ */
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "seg.h"
+#include "seq.h"
+#include "stack.h"
+#include "mem.h"
+#include "assert.h"
+
+/* Creates a new Seg_T which contains the segments of the program */
+extern Seg_T Seg_new(){
+	Seg_T tmp;
+	NEW(tmp);
+
+	tmp->segments = Seq_new(0);
+	tmp->unmapped = Stack_new();
+
+	return tmp;
+}
+
+/* Maps segments chronologically, if there are spots that are empty from being unmapped they are filled first. */
+extern uint32_t Seg_map(Seg_T seg, uint32_t size){
+	if(Stack_empty(seg->unmapped)){
+		Segment *tmp = malloc(sizeof(struct Segment) + (size * sizeof(uint32_t)));
+        	tmp->size = size;
+        	memset(tmp->vals, 0, (size * sizeof(uint32_t)));
+		Seq_addhi(seg->segments, tmp);
+		return Seq_length(seg->segments) - 1;
+	}else{
+		Segment *tmp = malloc(sizeof(struct Segment) + (size * sizeof(uint32_t)));
+        	tmp->size = size;
+        	memset(tmp->vals, 0, (size * sizeof(uint32_t)));
+		int idx = (int)(uintptr_t)Stack_pop(seg->unmapped);
+		Segment *old_seg = Seq_put(seg->segments, idx, tmp);
+		free(old_seg);
+		return idx;
+	}
+}
+
+/* Unmaps a segment */
+extern void Seg_unmap(Seg_T seg, int idx){
+	Segment *tmp = Seq_put(seg->segments, idx, NULL);
+	free(tmp);
+	Stack_push(seg->unmapped, (void*)(uintptr_t)idx);
+}
+
+/* Frees the memory of Seg_T */
+extern void Seg_free(Seg_T *seg){
+	assert(seg && *seg);
+	int len = Seq_length((*seg)->segments);
+	for(int i = 0; i < len; ++i){
+		free(Seq_remhi((*seg)->segments));
+	}
+	//Seq_free(&((*seg)->segments));
+	Stack_free(&((*seg)->unmapped));
+	FREE(*seg);
+}

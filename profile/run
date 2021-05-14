@@ -1,0 +1,7 @@
+#!/bin/sh
+
+time -f "um 0: %e seconds" ./um /csc/411/um/midmark.um > /dev/null
+
+time -f "um 1: %e seconds" ./um /csc/411/um/advent.umz < answers.txt > /dev/null
+
+time -f "um 2: %e seconds" ./um /csc/411/um/sandmark.umz > /dev/null
